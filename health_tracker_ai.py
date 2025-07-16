@@ -1,10 +1,35 @@
 # health_tracker_ai.py
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 from datetime import datetime
+import hashlib
 import os
 
 st.set_page_config(page_title="健康・生活記録AI", layout="wide")
+
+# ----------
+# ログイン機能
+# ----------
+def check_password():
+    def hash_pw(password):
+        return hashlib.sha256(password.encode()).hexdigest()
+
+    st.sidebar.title("ログイン")
+    username = st.sidebar.text_input("ユーザー名")
+    password = st.sidebar.text_input("パスワード", type="password")
+
+    if username and password:
+        if username == "tanuki" and hash_pw(password) == hash_pw("ponpon"):
+            return True
+        else:
+            st.sidebar.error("ログイン失敗")
+            return False
+    return False
+
+if not check_password():
+    st.stop()
+
 st.title("🌿 健康・生活記録 AI アシスタント")
 
 CSV_FILE = "health_log.csv"
@@ -64,7 +89,6 @@ if submit:
     else:
         df = pd.DataFrame()
 
-    # 必要な列を強制的に確保
     for col in REQUIRED_COLUMNS:
         if col not in df.columns:
             df[col] = None
@@ -77,7 +101,6 @@ if submit:
 if os.path.exists(CSV_FILE):
     df = pd.read_csv(CSV_FILE)
 
-    # 必要な列がない場合は補完
     for col in REQUIRED_COLUMNS:
         if col not in df.columns:
             df[col] = None
@@ -85,7 +108,6 @@ if os.path.exists(CSV_FILE):
     df["日付_dt"] = pd.to_datetime(df["日付"], errors='coerce')
     df["月"] = df["日付_dt"].dt.to_period("M")
 
-    # データ型安全化
     df["体重"] = pd.to_numeric(df["体重"], errors="coerce")
     df["気分"] = pd.to_numeric(df["気分"], errors="coerce")
     df["睡眠時間"] = pd.to_numeric(df["睡眠時間"], errors="coerce")
